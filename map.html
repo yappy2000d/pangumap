@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>盤靈古域－世界地圖</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+    h1 {
+      text-align: center;
+      margin: 20px 0;
+    }
+    #map {
+      width: 100%;
+      height: 30rem;
+    }
+    #filter {
+      text-align: center;
+    }
+    select {
+      padding: 5px;
+      font-size: 14px;
+      border-radius: 5px;
+    }
+    #footer {
+      text-align: center;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>盤靈古域－世界地圖</h1>
+
+  <!-- 標籤過濾器下拉選單 -->
+  <div id="filter">
+    <label for="tagFilter">選擇標籤過濾: </label>
+    <select id="tagFilter">
+      <option value="">全部</option>
+      <option value="其他區域">其他區域</option>
+      <option value="種族重生點">種族重生點</option>
+      <option value="PVP">PVP</option>
+      <option value="神器副本">神器副本</option>
+      <option value="神廟">神廟</option>
+      <option value="主線副本">主線副本</option>
+    </select>
+  </div>
+
+  <div id="map"></div>
+
+  <div id="footer">
+    <p>Made with leaflet.js</p>
+  </div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    // 初始化 Leaflet 地圖
+    var map = L.map('map', {
+      crs: L.CRS.Simple,  // 使用簡單的坐標系來處理自定義 PNG 圖片
+      maxZoom: 0.5,         // 最大縮放級別
+      minZoom: -0.8         // 最小縮放級別
+    });
+
+    // 地圖背景圖片（請根據自己的圖片調整尺寸）
+    var bounds = [[0, 0], [817, 976]];  // 圖片大小
+    var image = L.imageOverlay('map.png', bounds).addTo(map);
+    map.fitBounds(bounds);  // 保證圖片完全顯示在地圖視窗中
+
+    var markers = [
+        { coords: [286, 746], name: "材質資料庫", desc: "煉丹房、鐵匠鋪", tag: "其他區域" },
+        { coords: [272, 529], name: "職業訓練所", desc: "地圖資料庫、忠烈祠", tag: "其他區域" },
+        { coords: [357, 524], name: "種族選擇", desc: "", tag: "其他區域" },
+        { coords: [701, 315], name: "北極點", desc: "世界出生點", tag: "其他區域" },
+        { coords: [445, 528], name: "新手指導區", desc: "一片石頭", tag: "其他區域" },
+        { coords: [438, 715], name: "聖山", desc: "", tag: "其他區域" },
+
+        { coords: [316, 892], name: "神族", desc: "", tag: "種族重生點" },
+        { coords: [334, 599], name: "人族", desc: "", tag: "種族重生點" },
+        { coords: [192, 793], name: "妖族", desc: "", tag: "種族重生點" },
+        { coords: [193, 891], name: "仙族", desc: "", tag: "種族重生點" },
+        { coords: [407, 890], name: "戰神族", desc: "", tag: "種族重生點" },
+        
+        { coords: [705, 542], name: "PVP1", desc: "", tag: "PVP" },
+        { coords: [705, 634], name: "PVP2", desc: "", tag: "PVP" },
+        { coords: [705, 723], name: "PVP3", desc: "", tag: "PVP" },
+
+        { coords: [451, 812], name: "始皇陵", desc: "", tag: "神器副本" },
+        { coords: [528, 795], name: "鎮妖塔", desc: "", tag: "神器副本" },
+        { coords: [197, 503], name: "火焰魔", desc: "", tag: "神器副本" },
+        { coords: [119, 485], name: "哭霸", desc: "", tag: "神器副本" },
+        { coords: [711, 868], name: "假盤古", desc: "", tag: "神器副本" },
+        { coords: [640, 217], name: "真盤古" , desc: "", tag: "神器副本" },
+
+        { coords: [214, 598], name: "青龍神廟", desc: "", tag: "神廟" },
+        { coords: [515, 889], name: "朱雀神廟", desc: "", tag: "神廟" },
+        { coords: [531, 697], name: "白虎神廟", desc: "", tag: "神廟" },
+        { coords: [184, 695], name: "玄武神廟", desc: "", tag: "神廟" },
+
+        { coords: [361, 685], name: "青龍試煉", desc: "", tag: "主線副本" },
+        { coords: [362, 742], name: "朱雀試煉", desc: "", tag: "主線副本" },
+        { coords: [519, 625], name: "白虎試煉", desc: "", tag: "主線副本" },
+        { coords: [572, 436], name: "玄武試煉", desc: "", tag: "主線副本" },
+
+        { coords: [414, 605], name: "女媧試煉", desc: "", tag: "神器副本" },
+        { coords: [302, 820], name: "盤古試煉", desc: "", tag: "神器副本" },
+        { coords: [397, 822], name: "蚩尤試煉", desc: "", tag: "神器副本" },
+    ];
+
+    var markerInstances = [];
+    // 在地圖上添加標記
+    function updateMarkers(tagFilter) {
+      // 清除現有的標記
+      markerInstances.forEach(marker => {
+        marker.removeFrom(map);  // 移除標記
+      });
+      markerInstances = [];  // 清空現有標記實例
+
+      // 過濾標記
+      var filteredMarkers = markers.filter(marker => {
+        return !tagFilter || marker.tag === tagFilter;
+      });
+
+      // 重新顯示過濾後的標記
+      filteredMarkers.forEach(marker => {
+        var markerInstance = L.marker(marker.coords).addTo(map);
+        markerInstance.bindPopup(`<strong>${marker.name}</strong><br>${marker.desc}`);
+        markerInstances.push(markerInstance);  // 保存標記實例
+      });
+    }
+
+    // 初始化時顯示所有標記
+    updateMarkers("");
+
+    // 監聽標籤過濾器變更事件
+    document.getElementById("tagFilter").addEventListener("change", function(event) {
+      var selectedTag = event.target.value;
+      updateMarkers(selectedTag);
+    });
+  </script>
+</body>
+</html>
